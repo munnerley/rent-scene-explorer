@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { exportSampleGlb } from "@/lib/twin/build";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const C = ({ children }: { children: ReactNode }) => (
@@ -7,11 +8,24 @@ const C = ({ children }: { children: ReactNode }) => (
 
 const DEVICE_KINDS = ["thermostat", "lock", "fridge", "tv", "washer", "dryer", "dishwasher", "oven", "light", "hub", "sensor", "camera", "leak"];
 
+async function downloadSample() {
+  const blob = await exportSampleGlb();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "smartrent-sample-site.glb";
+  a.click();
+}
+
 export function ModellerGuide() {
   return (
     <section className="mt-14 rounded-xl border bg-card p-6 text-sm">
       <p className="eyebrow">For modellers</p>
-      <h3 className="mt-1 text-lg font-semibold">Building a new site in Blender</h3>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-lg font-semibold">Building a new site in Blender</h3>
+        <button type="button" onClick={downloadSample} className="text-sm font-medium text-brand-deep underline underline-offset-4 hover:text-brand">
+          Download sample GLB file
+        </button>
+      </div>
       <Tabs defaultValue="workflow" className="mt-4">
         <TabsList className="flex h-auto flex-wrap justify-start">
           <TabsTrigger value="workflow">1. Workflow</TabsTrigger>
@@ -80,7 +94,7 @@ export function ModellerGuide() {
               <li>Every featured apartment is named <C>APT_&lt;number&gt;</C> with a unique number.</li>
               <li>All devices are parented inside their apartment and start with <C>DEV_</C>.</li>
               <li>No leftover <C>.001</C> name suffixes.</li>
-              <li>Custom Properties ticked on export. Tip: use <b>Download sample GLB</b> as a reference.</li>
+              <li>Custom Properties ticked on export. Tip: <button type="button" onClick={downloadSample} className="font-medium text-brand-deep underline underline-offset-4">download the sample GLB file</button> as a reference.</li>
             </ul>
           </TabsContent>
         </div>
