@@ -1,9 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { siteQuery, meQuery, deleteSite } from "@/lib/twin/data";
+import { siteQuery } from "@/lib/twin/data";
 import { AppHeader } from "@/components/twin/AppHeader";
 import { UnitTable } from "@/components/twin/UnitTable";
 import { DetailPanel } from "@/components/twin/DetailPanel";
@@ -120,12 +120,10 @@ function SitePage() {
 
 function PlacementPopover({ site }: { site: { id: string; lat: number; lon: number; rotation: number; scale: number; kind: string; model_path: string | null; created_by: string | null } }) {
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const [f, setF] = useState({ lat: String(site.lat), lon: String(site.lon), rotation: String(site.rotation), scale: String(site.scale) });
   const [step, setStep] = useState(10);
-  const { data: me } = useQuery(meQuery);
-  const canDelete = site.kind === "glb" && !!me && site.created_by === me;
   const save = async (over?: Partial<typeof f>): Promise<void> => {
+    if (!over && !confirm("This will overwrite the saved map placement for everyone. Are you sure?")) return;
     const v = { ...f, ...over };
     const patch = { lat: Number(v.lat), lon: Number(v.lon), rotation: Number(v.rotation), scale: Number(v.scale) };
     if (Object.values(patch).some(isNaN)) { toast.error("Enter numbers only"); return; }
@@ -145,12 +143,6 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
     setF({ ...f, ...next });
     void save(next);
   };
-  const remove = async (): Promise<void> => {
-    if (!confirm("Delete this site and all its apartment data?")) return;
-    try { await deleteSite(site); } catch (err) { toast.error((err as Error).message); return; }
-    qc.invalidateQueries({ queryKey: ["sites"] });
-    navigate({ to: "/sites" });
-  };
   return (
     <Popover>
       <PopoverTrigger asChild><Button size="sm" variant="secondary" className="h-8 shadow-sm">Map placement</Button></PopoverTrigger>
@@ -167,14 +159,13 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
             <Seg value={String(step)} onChange={(v) => setStep(Number(v))} options={[["1", "1 ft"], ["10", "10 ft"], ["100", "100 ft"]]} />
           </div>
           <div className="mx-auto grid w-28 grid-cols-3 gap-1">
-            <span /><Button size="sm" variant="outline" className="h-8" aria-label="Move north" onClick={() => nudge(1, 0)}>↑</Button><span />
-            <Button size="sm" variant="outline" className="h-8" aria-label="Move west" onClick={() => nudge(0, -1)}>←</Button><span />
-            <Button size="sm" variant="outline" className="h-8" aria-label="Move east" onClick={() => nudge(0, 1)}>→</Button>
-            <span /><Button size="sm" variant="outline" className="h-8" aria-label="Move south" onClick={() => nudge(-1, 0)}>↓</Button><span />
+            <span /><Button size="sm" variant="outline" className="h-8" aria-label="Move north" onClick={() => nudge(1, 0)}>N</Button><span />
+            <Button size="sm" variant="outline" className="h-8" aria-label="Move west" onClick={() => nudge(0, -1)}>W</Button><span />
+            <Button size="sm" variant="outline" className="h-8" aria-label="Move east" onClick={() => nudge(0, 1)}>E</Button>
+            <span /><Button size="sm" variant="outline" className="h-8" aria-label="Move south" onClick={() => nudge(-1, 0)}>S</Button><span />
           </div>
         </div>
         <Button size="sm" className="w-full" onClick={() => save()}>Save placement</Button>
-        {canDelete && <Button size="sm" variant="ghost" className="w-full text-destructive hover:text-destructive" onClick={remove}>Delete site</Button>}
       </PopoverContent>
     </Popover>
   );
