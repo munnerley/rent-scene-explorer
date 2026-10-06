@@ -12,6 +12,7 @@ export interface ViewerProps {
   glbUrl?: string | null;
   buildings: SampleBuilding[]; units: SampleUnit[];
   focusUnit: string | null; focusDevice: string | null;
+  hiddenUnits?: string[];
   view: "2d" | "3d"; ground: "map" | "plane";
   onPick: (unit: string | null, device: string | null) => void;
 }
@@ -72,9 +73,10 @@ function Model({ root, props }: { root: THREE.Object3D; props: ViewerProps }) {
     root.traverse((o) => { if (isApartment(o)) apts.push(o); });
     const boxOf = (o: THREE.Object3D) => new THREE.Box3().setFromObject(o);
     const focused = apts.find((a) => a.name === props.focusUnit) ?? null;
-    root.traverse((o) => { if (o.userData["roof"] || /roof/i.test(o.name)) o.visible = !focused; });
+    const hidden = new Set(props.hiddenUnits ?? []);
+    root.traverse((o) => { if (o.userData["roof"] || /roof/i.test(o.name)) o.visible = !focused && hidden.size === 0; });
     for (const a of apts) {
-      a.visible = true;
+      a.visible = !hidden.has(a.name);
       a.children.forEach((c) => { if (c.userData["shell"] || /^SHELL/i.test(c.name) || /^Window/.test(c.name)) c.visible = true; });
       const int = a.getObjectByName("INTERIOR");
       if (int && isSample) int.visible = false;
@@ -89,7 +91,7 @@ function Model({ root, props }: { root: THREE.Object3D; props: ViewerProps }) {
     root.updateMatrixWorld(true);
     const sel = (props.focusDevice && focused?.getObjectByName(props.focusDevice)) || focused;
     setHelper(sel ? new THREE.Box3Helper(boxOf(sel).expandByScalar(0.08), new THREE.Color(props.focusDevice ? "#ff8a3d" : "#32bdcd")) : null);
-  }, [root, props.focusUnit, props.focusDevice, isSample]);
+  }, [root, props.focusUnit, props.focusDevice, isSample, props.hiddenUnits]);
 
   // camera
   useEffect(() => {
