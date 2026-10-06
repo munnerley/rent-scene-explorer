@@ -51,7 +51,7 @@ function SceneSetup() {
       "shadow-camera-left": -120, "shadow-camera-right": 120, "shadow-camera-top": 120, "shadow-camera-bottom": -120 }),
     h(Environment, { resolution: 64 },
       h(Lightformer, { intensity: 2, position: [0, 5, 0], scale: [10, 10, 1] }),
-      h(Lightformer, { intensity: 1, color: "#bde", position: [-5, 1, -1], "rotation-y": Math.PI / 2, scale: [20, 1, 1] })));
+      h(Lightformer, { intensity: 1, color: "#bde", position: [-5, 1, -1], rotation: [0, Math.PI / 2, 0], scale: [20, 1, 1] })));
 }
 
 function GlbRoot({ url, children }: { url: string; children: (root: THREE.Object3D) => React.ReactNode }) {
