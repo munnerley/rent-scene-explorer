@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ZzTestRouteImport } from './routes/zz-test'
 import { Route as AuthenticatedSitesIndexRouteImport } from './routes/_authenticated/sites.index'
 import { Route as AuthenticatedSitesSiteIdRouteImport } from './routes/_authenticated/sites.$siteId'
 
@@ -29,6 +30,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ZzTestRoute = ZzTestRouteImport.update({
+  id: '/zz-test',
+  path: '/zz-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSitesIndexRoute = AuthenticatedSitesIndexRouteImport.update({
   id: '/sites/',
   path: '/sites/',
@@ -44,12 +50,14 @@ const AuthenticatedSitesSiteIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/zz-test': typeof ZzTestRoute
   '/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
   '/sites/': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/zz-test': typeof ZzTestRoute
   '/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
   '/sites': typeof AuthenticatedSitesIndexRoute
 }
@@ -58,19 +66,21 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/zz-test': typeof ZzTestRoute
   '/_authenticated/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
   '/_authenticated/sites/': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/sites/$siteId' | '/sites/'
+  fullPaths: '/' | '/auth' | '/zz-test' | '/sites/$siteId' | '/sites/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/sites/$siteId' | '/sites'
+  to: '/' | '/auth' | '/zz-test' | '/sites/$siteId' | '/sites'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/zz-test'
     | '/_authenticated/sites/$siteId'
     | '/_authenticated/sites/'
   fileRoutesById: FileRoutesById
@@ -79,6 +89,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ZzTestRoute: typeof ZzTestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -102,6 +113,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zz-test': {
+      id: '/zz-test'
+      path: '/zz-test'
+      fullPath: '/zz-test'
+      preLoaderRoute: typeof ZzTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/sites/': {
@@ -138,6 +156,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ZzTestRoute: ZzTestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
