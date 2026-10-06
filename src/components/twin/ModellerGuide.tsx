@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { exportSampleGlb } from "@/lib/twin/build";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -22,9 +24,9 @@ export function ModellerGuide() {
       <p className="eyebrow">For modellers</p>
       <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-lg font-semibold">Building a new site in Blender</h3>
-        <button type="button" onClick={downloadSample} className="text-sm font-medium text-brand-deep underline underline-offset-4 hover:text-brand">
-          Download sample GLB file
-        </button>
+        <Button type="button" variant="outline" size="sm" onClick={downloadSample}>
+          <Download className="h-4 w-4" /> Download sample GLB file
+        </Button>
       </div>
       <Tabs defaultValue="workflow" className="mt-4">
         <TabsList className="flex h-auto flex-wrap justify-start">
