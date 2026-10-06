@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { siteQuery } from "@/lib/twin/data";
+import { siteQuery, meQuery, deleteSite } from "@/lib/twin/data";
 import { AppHeader } from "@/components/twin/AppHeader";
 import { UnitTable } from "@/components/twin/UnitTable";
 import { DetailPanel } from "@/components/twin/DetailPanel";
@@ -64,7 +64,7 @@ function SitePage() {
 
   return (
     <div className="flex h-screen flex-col">
-      <AppHeader title={site.name} subtitle={site.city ?? undefined} />
+      <AppHeader title={site.name} subtitle={[site.city, site.created_by_name && `Uploaded by ${site.created_by_name}`].filter(Boolean).join(" · ") || undefined} />
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="relative min-h-0 flex-[3]">
@@ -118,11 +118,13 @@ function SitePage() {
   );
 }
 
-function PlacementPopover({ site }: { site: { id: string; lat: number; lon: number; rotation: number; scale: number; kind: string; model_path: string | null } }) {
+function PlacementPopover({ site }: { site: { id: string; lat: number; lon: number; rotation: number; scale: number; kind: string; model_path: string | null; created_by: string | null } }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [f, setF] = useState({ lat: String(site.lat), lon: String(site.lon), rotation: String(site.rotation), scale: String(site.scale) });
   const [step, setStep] = useState(10);
+  const { data: me } = useQuery(meQuery);
+  const canDelete = site.kind === "glb" && !!me && site.created_by === me;
   const save = async (over?: Partial<typeof f>): Promise<void> => {
     const v = { ...f, ...over };
     const patch = { lat: Number(v.lat), lon: Number(v.lon), rotation: Number(v.rotation), scale: Number(v.scale) };
@@ -145,9 +147,7 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
   };
   const remove = async (): Promise<void> => {
     if (!confirm("Delete this site and all its apartment data?")) return;
-    if (site.model_path) await supabase.storage.from("models").remove([site.model_path]);
-    const { error } = await supabase.from("sites").delete().eq("id", site.id);
-    if (error) { toast.error(error.message); return; }
+    try { await deleteSite(site); } catch (err) { toast.error((err as Error).message); return; }
     qc.invalidateQueries({ queryKey: ["sites"] });
     navigate({ to: "/sites" });
   };
@@ -174,7 +174,7 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
           </div>
         </div>
         <Button size="sm" className="w-full" onClick={() => save()}>Save placement</Button>
-        <Button size="sm" variant="ghost" className="w-full text-destructive hover:text-destructive" onClick={remove}>Delete site</Button>
+        {canDelete && <Button size="sm" variant="ghost" className="w-full text-destructive hover:text-destructive" onClick={remove}>Delete site</Button>}
       </PopoverContent>
     </Popover>
   );

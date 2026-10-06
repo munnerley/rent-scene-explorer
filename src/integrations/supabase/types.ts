@@ -116,6 +116,7 @@ export type Database = {
           city: string | null
           created_at: string
           created_by: string | null
+          created_by_name: string | null
           id: string
           kind: string
           lat: number
@@ -129,6 +130,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           created_by?: string | null
+          created_by_name?: string | null
           id?: string
           kind?: string
           lat?: number
@@ -142,6 +144,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           created_by?: string | null
+          created_by_name?: string | null
           id?: string
           kind?: string
           lat?: number
