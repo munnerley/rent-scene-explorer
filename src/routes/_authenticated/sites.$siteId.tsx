@@ -126,6 +126,7 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
   const { data: me } = useQuery(meQuery);
   const canDelete = site.kind === "glb" && !!me && site.created_by === me;
   const save = async (over?: Partial<typeof f>): Promise<void> => {
+    if (!over && !confirm("This will overwrite the saved map placement for everyone. Are you sure?")) return;
     const v = { ...f, ...over };
     const patch = { lat: Number(v.lat), lon: Number(v.lon), rotation: Number(v.rotation), scale: Number(v.scale) };
     if (Object.values(patch).some(isNaN)) { toast.error("Enter numbers only"); return; }
@@ -167,14 +168,13 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
             <Seg value={String(step)} onChange={(v) => setStep(Number(v))} options={[["1", "1 ft"], ["10", "10 ft"], ["100", "100 ft"]]} />
           </div>
           <div className="mx-auto grid w-28 grid-cols-3 gap-1">
-            <span /><Button size="sm" variant="outline" className="h-8" aria-label="Move north" onClick={() => nudge(1, 0)}>↑</Button><span />
-            <Button size="sm" variant="outline" className="h-8" aria-label="Move west" onClick={() => nudge(0, -1)}>←</Button><span />
-            <Button size="sm" variant="outline" className="h-8" aria-label="Move east" onClick={() => nudge(0, 1)}>→</Button>
-            <span /><Button size="sm" variant="outline" className="h-8" aria-label="Move south" onClick={() => nudge(-1, 0)}>↓</Button><span />
+            <span /><Button size="sm" variant="outline" className="h-8" aria-label="Move north" onClick={() => nudge(1, 0)}>N</Button><span />
+            <Button size="sm" variant="outline" className="h-8" aria-label="Move west" onClick={() => nudge(0, -1)}>W</Button><span />
+            <Button size="sm" variant="outline" className="h-8" aria-label="Move east" onClick={() => nudge(0, 1)}>E</Button>
+            <span /><Button size="sm" variant="outline" className="h-8" aria-label="Move south" onClick={() => nudge(-1, 0)}>S</Button><span />
           </div>
         </div>
         <Button size="sm" className="w-full" onClick={() => save()}>Save placement</Button>
-        {canDelete && <Button size="sm" variant="ghost" className="w-full text-destructive hover:text-destructive" onClick={remove}>Delete site</Button>}
       </PopoverContent>
     </Popover>
   );

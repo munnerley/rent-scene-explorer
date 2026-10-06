@@ -65,6 +65,7 @@ function Model({ root, props }: { root: THREE.Object3D; props: ViewerProps }) {
   const controls = useRef<CameraControls>(null);
   const [helper, setHelper] = useState<THREE.Box3Helper | null>(null);
   const isSample = !props.glbUrl;
+  const camKey = useRef<string | null>(null);
 
   // visibility / interior management
   useEffect(() => {
@@ -96,6 +97,10 @@ function Model({ root, props }: { root: THREE.Object3D; props: ViewerProps }) {
   // camera
   useEffect(() => {
     const c = controls.current; if (!c) return;
+    // Only re-frame when the user changes focus or view — not when the model is rebuilt after a data refresh (e.g. a nudge).
+    const key = `${props.focusUnit}|${props.view}`;
+    if (camKey.current === key) return;
+    camKey.current = key;
     root.updateMatrixWorld(true);
     const focused = props.focusUnit ? root.getObjectByName(props.focusUnit) : null;
     const box = new THREE.Box3().setFromObject(focused ?? root);
