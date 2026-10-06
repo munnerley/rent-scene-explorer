@@ -125,6 +125,14 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
     setF({ ...f, ...next });
     void save(next);
   };
+  const remove = async (): Promise<void> => {
+    if (!confirm("Delete this site and all its apartment data?")) return;
+    if (site.model_path) await supabase.storage.from("models").remove([site.model_path]);
+    const { error } = await supabase.from("sites").delete().eq("id", site.id);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["sites"] });
+    navigate({ to: "/sites" });
+  };
   return (
     <Popover>
       <PopoverTrigger asChild><Button size="sm" variant="secondary" className="h-8 shadow-sm">Map placement</Button></PopoverTrigger>
