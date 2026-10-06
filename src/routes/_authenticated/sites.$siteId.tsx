@@ -31,7 +31,7 @@ function Seg({ value, options, onChange }: { value: string; options: [string, st
   return (
     <div className="flex rounded-lg bg-card/95 p-0.5 shadow-sm ring-1 ring-border">
       {options.map(([v, l]) => (
-        <button key={v} onClick={() => onChange(v)} className={cn("rounded-md px-3 py-1 text-xs font-medium", value === v ? "bg-ink text-ink-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
+        <button key={v} aria-pressed={value === v} onClick={() => onChange(v)} className={cn("rounded-md px-3 py-1 text-xs font-medium transition-colors", value === v ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>{l}</button>
       ))}
     </div>
   );
