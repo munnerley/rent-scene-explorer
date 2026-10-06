@@ -22,12 +22,12 @@ function Cell({ unit, col, siteId }: { unit: Unit; col: (typeof COLS)[number]; s
   const initial = unit[col.key] == null ? "" : String(unit[col.key]);
   const [v, setV] = useState(initial);
   useEffect(() => setV(initial), [initial]);
-  const save = async () => {
+  const save = async (): Promise<void> => {
     if (v === initial) return;
     const value = col.num ? (v === "" ? null : Number(v)) : v === "" && col.key !== "notes" ? initial : v;
-    if (col.num && value !== null && isNaN(value as number)) { setV(initial); return toast.error("Enter a number"); }
-    const { error } = await supabase.from("units").update({ [col.key]: value }).eq("id", unit.id);
-    if (error) { setV(initial); return toast.error(error.message); }
+    if (col.num && value !== null && isNaN(value as number)) { setV(initial); { toast.error("Enter a number"); return; } }
+    const { error } = await supabase.from("units").update({ [col.key]: value } as never).eq("id", unit.id);
+    if (error) { setV(initial); { toast.error(error.message); return; } }
     qc.setQueryData(["site", siteId], (old: { units: Unit[] } | undefined) =>
       old ? { ...old, units: old.units.map((u) => (u.id === unit.id ? { ...u, [col.key]: value } : u)) } : old);
   };

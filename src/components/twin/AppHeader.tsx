@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
-export function AppHeader({ title, subtitle }: { title?: string; subtitle?: string }) {
+export function AppHeader({ title, subtitle }: { title?: string | undefined; subtitle?: string | undefined }) {
   const navigate = useNavigate();
   return (
     <header className="flex h-14 items-center gap-4 bg-ink px-5 text-ink-foreground">

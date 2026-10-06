@@ -13,13 +13,13 @@ function DeviceEditor({ device }: { device: Device }) {
   const [d, setD] = useState(device);
   useEffect(() => setD(device), [device]);
   const fields: [keyof Device, string, boolean?][] = [["name", "Name"], ["type", "Type"], ["model", "Model"], ["install_year", "Installed", true], ["energy_kwh", "Energy kWh/yr", true], ["notes", "Notes"]];
-  const save = async () => {
+  const save = async (): Promise<void> => {
     const { error } = await supabase.from("devices").update({
       name: d.name, type: d.type, model: d.model, notes: d.notes, status: d.status,
       install_year: d.install_year === null || (d.install_year as unknown) === "" ? null : Number(d.install_year),
       energy_kwh: d.energy_kwh === null || (d.energy_kwh as unknown) === "" ? null : Number(d.energy_kwh),
     }).eq("id", d.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Device saved");
     qc.invalidateQueries({ queryKey: ["devices", d.unit_id] });
   };
