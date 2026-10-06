@@ -59,16 +59,7 @@ function SitesPage() {
             ))}
           </div>
         )}
-        <section className="mt-14 rounded-xl border bg-card p-6 text-sm">
-          <h3 className="font-semibold">Preparing a model in Blender or SketchUp</h3>
-          <ul className="mt-3 list-disc space-y-1 pl-5 text-muted-foreground">
-            <li>Name each apartment object <code>APT_4301</code> (the part after <code>APT_</code> becomes the apartment number).</li>
-            <li>Put furniture and devices inside the apartment; name devices <code>DEV_fridge</code>, <code>DEV_tv</code>, <code>DEV_thermostat</code>…</li>
-            <li>Optional: an object named <code>SHELL</code> inside the apartment is hidden when you look inside it.</li>
-            <li>Optional Blender custom properties on the apartment: <code>beds</code>, <code>baths</code>, <code>area_sqft</code>, <code>floor</code>.</li>
-            <li>Trees, roads and paths can be named anything. Export as <b>GLB</b>, 1 unit = 1 metre, Y up.</li>
-          </ul>
-        </section>
+        <ModellerGuide />
       </main>
     </div>
   );
