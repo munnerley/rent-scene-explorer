@@ -25,7 +25,7 @@ function Index() {
         <p className="eyebrow !text-brand">Digital twin platform</p>
         <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-[1.05] md:text-7xl">Every building, every home, every device — in one live model.</h1>
         <p className="mt-6 max-w-xl text-lg text-ink-foreground/70">
-          Drop a Blender or SketchUp site on the map. Each apartment becomes a row you can edit, and each fridge, TV or thermostat inside it becomes something you can click.
+          Each apartment becomes a row you can edit, and each fridge, TV or thermostat inside it becomes something you can click.
         </p>
         <div className="mt-10 flex gap-3">
           <Button asChild size="lg" className="bg-brand text-ink hover:bg-brand/90"><Link to="/sites">Open the platform</Link></Button>
