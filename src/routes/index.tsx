@@ -21,7 +21,6 @@ function Index() {
         <Button asChild variant="ghost" className="text-ink-foreground hover:bg-ink-foreground/10 hover:text-ink-foreground"><Link to="/auth">Sign in</Link></Button>
       </header>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-8 pb-24">
-        <img src="/smartrent-logo.svg" alt="SmartRent" width={304} height={40} className="mb-10 h-10 w-auto invert" />
         <p className="eyebrow !text-brand">Digital twin platform</p>
         <h1 className="mt-4 max-w-3xl text-5xl font-semibold leading-[1.05] md:text-7xl">Every building, every home, every device — in one live model.</h1>
         <p className="mt-6 max-w-xl text-lg text-ink-foreground/70">
