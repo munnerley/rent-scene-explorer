@@ -1,0 +1,48 @@
+import { queryOptions } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+export type Site = Database["public"]["Tables"]["sites"]["Row"];
+export type Building = Database["public"]["Tables"]["buildings"]["Row"];
+export type Unit = Database["public"]["Tables"]["units"]["Row"];
+export type Device = Database["public"]["Tables"]["devices"]["Row"];
+
+export const sitesQuery = queryOptions({
+  queryKey: ["sites"],
+  queryFn: async () => {
+    const { data, error } = await supabase.from("sites").select("*, units(count)").order("created_at");
+    if (error) throw error;
+    return data;
+  },
+});
+
+export const siteQuery = (id: string) => queryOptions({
+  queryKey: ["site", id],
+  queryFn: async () => {
+    const [s, b, u] = await Promise.all([
+      supabase.from("sites").select("*").eq("id", id).single(),
+      supabase.from("buildings").select("*").eq("site_id", id).order("name"),
+      supabase.from("units").select("*").eq("site_id", id).order("apt_number"),
+    ]);
+    if (s.error) throw s.error;
+    if (b.error) throw b.error;
+    if (u.error) throw u.error;
+    let glbUrl: string | null = null;
+    if (s.data.model_path) {
+      const { data, error } = await supabase.storage.from("models").createSignedUrl(s.data.model_path, 60 * 60 * 6);
+      if (error) throw error;
+      glbUrl = data.signedUrl;
+    }
+    return { site: s.data, buildings: b.data, units: u.data, glbUrl };
+  },
+  staleTime: 1000 * 60 * 30,
+});
+
+export const devicesQuery = (unitId: string) => queryOptions({
+  queryKey: ["devices", unitId],
+  queryFn: async () => {
+    const { data, error } = await supabase.from("devices").select("*").eq("unit_id", unitId).order("name");
+    if (error) throw error;
+    return data;
+  },
+});
