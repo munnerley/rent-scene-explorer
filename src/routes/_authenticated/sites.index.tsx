@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { sitesQuery } from "@/lib/twin/data";
+import { sitesQuery, meQuery, creatorName, deleteSite } from "@/lib/twin/data";
+import { toast } from "sonner";
 import { ingestGlb } from "@/lib/twin/ingest";
 import { exportSampleGlb } from "@/lib/twin/build";
 import { AppHeader } from "@/components/twin/AppHeader";
@@ -27,6 +28,14 @@ export const Route = createFileRoute("/_authenticated/sites/")({
 
 function SitesPage() {
   const { data, isLoading } = useQuery(sitesQuery);
+  const { data: me } = useQuery(meQuery);
+  const qc = useQueryClient();
+  const remove = async (e: React.MouseEvent, s: { id: string; name: string; model_path: string | null }) => {
+    e.preventDefault(); e.stopPropagation();
+    if (!confirm(`Delete "${s.name}" and all its apartment data?`)) return;
+    try { await deleteSite(s); toast.success("Site deleted"); qc.invalidateQueries({ queryKey: ["sites"] }); }
+    catch (err) { toast.error((err as Error).message); }
+  };
   return (
     <div className="min-h-screen">
       <AppHeader />
@@ -56,6 +65,14 @@ function SitesPage() {
                 <h2 className="mt-4 text-xl font-semibold group-hover:text-brand-deep">{s.name}</h2>
                 <p className="text-sm text-muted-foreground">{s.city ?? "—"}</p>
                 <p className="mt-4 font-display text-2xl">{(s.units as unknown as { count: number }[])[0]?.count ?? 0}<span className="ml-1 text-sm text-muted-foreground">apartments</span></p>
+                {s.kind === "glb" && (
+                  <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3 text-xs text-muted-foreground">
+                    <span className="truncate">Uploaded by {s.created_by_name ?? "unknown"}</span>
+                    {me && s.created_by === me && (
+                      <Button size="sm" variant="ghost" className="h-7 text-destructive hover:text-destructive" onClick={(e) => remove(e, s)}>Delete</Button>
+                    )}
+                  </div>
+                )}
               </Link>
             ))}
           </div>
@@ -90,7 +107,7 @@ function UploadDialog() {
       const up = await supabase.storage.from("models").upload(path, file, { contentType: "model/gltf-binary" });
       if (up.error) throw up.error;
       setBusy(`Saving ${units.length} apartments…`);
-      const { data: site, error } = await supabase.from("sites").insert({ name, city, lat: Number(lat), lon: Number(lon), kind: "glb", model_path: path, created_by: u.user!.id }).select().single();
+      const { data: site, error } = await supabase.from("sites").insert({ name, city, lat: Number(lat), lon: Number(lon), kind: "glb", model_path: path, created_by: u.user!.id, created_by_name: creatorName(u.user) }).select().single();
       if (error) throw error;
       const { data: rows, error: ue } = await supabase.from("units").insert(units.map((x) => ({
         site_id: site.id, object_name: x.object_name, apt_number: x.apt_number, floor: x.floor,

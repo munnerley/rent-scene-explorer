@@ -46,3 +46,19 @@ export const devicesQuery = (unitId: string) => queryOptions({
     return data;
   },
 });
+
+export const meQuery = queryOptions({
+  queryKey: ["me"],
+  queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
+});
+
+export const creatorName = (u: { email?: string; user_metadata?: Record<string, unknown> } | null | undefined) =>
+  String(u?.user_metadata?.["full_name"] ?? u?.user_metadata?.["name"] ?? u?.email ?? "Unknown");
+
+/** Removes a site, its stored model and (by cascade) all apartment and device data. Only the creator may do this. */
+export async function deleteSite(site: { id: string; model_path: string | null }) {
+  const { data, error } = await supabase.from("sites").delete().eq("id", site.id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Only the person who uploaded this site can delete it.");
+  if (site.model_path) await supabase.storage.from("models").remove([site.model_path]);
+}
