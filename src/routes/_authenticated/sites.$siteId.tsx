@@ -104,19 +104,19 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [f, setF] = useState({ lat: String(site.lat), lon: String(site.lon), rotation: String(site.rotation), scale: String(site.scale) });
-  const save = async () => {
+  const save = async (): Promise<void> => {
     const patch = { lat: Number(f.lat), lon: Number(f.lon), rotation: Number(f.rotation), scale: Number(f.scale) };
-    if (Object.values(patch).some(isNaN)) return toast.error("Enter numbers only");
+    if (Object.values(patch).some(isNaN)) { toast.error("Enter numbers only"); return; }
     const { error } = await supabase.from("sites").update(patch).eq("id", site.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["site", site.id] });
     toast.success("Placement saved");
   };
-  const remove = async () => {
+  const remove = async (): Promise<void> => {
     if (!confirm("Delete this site and all its apartment data?")) return;
     if (site.model_path) await supabase.storage.from("models").remove([site.model_path]);
     const { error } = await supabase.from("sites").delete().eq("id", site.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["sites"] });
     navigate({ to: "/sites" });
   };

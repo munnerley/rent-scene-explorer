@@ -32,14 +32,14 @@ function AuthPage() {
     return () => data.subscription.unsubscribe();
   }, [navigate]);
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault(); setBusy(true);
     const { error } = mode === "in"
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + "/sites" } });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    if (mode === "up") toast.success("Check your email to confirm your account.");
+    if (error) { toast.error(error.message); return; }
+    if (mode === "up") void toast.success("Check your email to confirm your account.");
   };
 
   return (
