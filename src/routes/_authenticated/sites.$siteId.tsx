@@ -1,9 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { siteQuery, meQuery, deleteSite } from "@/lib/twin/data";
+import { siteQuery } from "@/lib/twin/data";
 import { AppHeader } from "@/components/twin/AppHeader";
 import { UnitTable } from "@/components/twin/UnitTable";
 import { DetailPanel } from "@/components/twin/DetailPanel";
@@ -120,11 +120,8 @@ function SitePage() {
 
 function PlacementPopover({ site }: { site: { id: string; lat: number; lon: number; rotation: number; scale: number; kind: string; model_path: string | null; created_by: string | null } }) {
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const [f, setF] = useState({ lat: String(site.lat), lon: String(site.lon), rotation: String(site.rotation), scale: String(site.scale) });
   const [step, setStep] = useState(10);
-  const { data: me } = useQuery(meQuery);
-  const canDelete = site.kind === "glb" && !!me && site.created_by === me;
   const save = async (over?: Partial<typeof f>): Promise<void> => {
     if (!over && !confirm("This will overwrite the saved map placement for everyone. Are you sure?")) return;
     const v = { ...f, ...over };
@@ -145,12 +142,6 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
     const next = { lat: nlat.toFixed(7), lon: nlon.toFixed(7) };
     setF({ ...f, ...next });
     void save(next);
-  };
-  const remove = async (): Promise<void> => {
-    if (!confirm("Delete this site and all its apartment data?")) return;
-    try { await deleteSite(site); } catch (err) { toast.error((err as Error).message); return; }
-    qc.invalidateQueries({ queryKey: ["sites"] });
-    navigate({ to: "/sites" });
   };
   return (
     <Popover>
