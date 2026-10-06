@@ -1,0 +1,138 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { lazy, Suspense, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { siteQuery } from "@/lib/twin/data";
+import { AppHeader } from "@/components/twin/AppHeader";
+import { UnitTable } from "@/components/twin/UnitTable";
+import { DetailPanel } from "@/components/twin/DetailPanel";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+
+const SiteViewer = lazy(() => import("@/components/twin/SiteViewer"));
+
+export const Route = createFileRoute("/_authenticated/sites/$siteId")({
+  head: () => ({
+    meta: [
+      { title: "Site explorer — SmartRent Digital Twin" },
+      { name: "description", content: "Explore a SmartRent community in 2D and 3D, edit apartments and inspect devices." },
+      { property: "og:title", content: "Site explorer — SmartRent Digital Twin" },
+      { property: "og:description", content: "Explore a SmartRent community in 2D and 3D." },
+    ],
+  }),
+  component: SitePage,
+});
+
+function Seg({ value, options, onChange }: { value: string; options: [string, string][]; onChange: (v: string) => void }) {
+  return (
+    <div className="flex rounded-lg bg-card/95 p-0.5 shadow-sm ring-1 ring-border">
+      {options.map(([v, l]) => (
+        <button key={v} onClick={() => onChange(v)} className={cn("rounded-md px-3 py-1 text-xs font-medium", value === v ? "bg-ink text-ink-foreground" : "text-muted-foreground hover:text-foreground")}>{l}</button>
+      ))}
+    </div>
+  );
+}
+
+function SitePage() {
+  const { siteId } = Route.useParams();
+  const { data, isLoading, error } = useQuery(siteQuery(siteId));
+  const [unit, setUnit] = useState<string | null>(null);
+  const [device, setDevice] = useState<string | null>(null);
+  const [view, setView] = useState<"2d" | "3d">("3d");
+  const [ground, setGround] = useState<"map" | "plane">("map");
+  const [building, setBuilding] = useState("all");
+
+  const sampleBuildings = useMemo(() => data?.buildings ?? [], [data?.buildings]);
+  const sampleUnits = useMemo(() => data?.units ?? [], [data?.units]);
+  const tableUnits = useMemo(() => (building === "all" ? sampleUnits : sampleUnits.filter((u) => u.building_id === building)), [sampleUnits, building]);
+
+  if (isLoading) return <div className="min-h-screen"><AppHeader /><p className="p-10 text-muted-foreground">Loading site…</p></div>;
+  if (error || !data) return <div className="min-h-screen"><AppHeader /><p className="p-10 text-destructive">Couldn't load this site.</p></div>;
+  const { site } = data;
+  const selectedUnit = data.units.find((u) => u.object_name === unit) ?? null;
+
+  return (
+    <div className="flex h-screen flex-col">
+      <AppHeader title={site.name} subtitle={site.city ?? undefined} />
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="relative min-h-0 flex-[3]">
+            <Suspense fallback={<div className="grid h-full place-items-center text-muted-foreground">Loading 3D view…</div>}>
+              <SiteViewer lat={site.lat} lon={site.lon} rotation={site.rotation} scale={site.scale} glbUrl={data.glbUrl}
+                buildings={sampleBuildings} units={sampleUnits} focusUnit={unit} focusDevice={device} view={view} ground={ground}
+                onPick={(u, d) => { setUnit(u); setDevice(d); }} />
+            </Suspense>
+            <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-wrap items-start gap-2 [&>*]:pointer-events-auto">
+              <Seg value={view} onChange={(v) => setView(v as "2d" | "3d")} options={[["2d", "2D plan"], ["3d", "3D explore"]]} />
+              <Seg value={ground} onChange={(v) => setGround(v as "map" | "plane")} options={[["map", "Street map"], ["plane", "Simple plane"]]} />
+              {unit && <Button size="sm" variant="secondary" className="h-8 shadow-sm" onClick={() => { setUnit(null); setDevice(null); }}>Show entire community</Button>}
+              <div className="ml-auto"><PlacementPopover site={site} /></div>
+            </div>
+            {ground === "map" && <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" className="absolute bottom-2 right-2 rounded bg-card/90 px-2 py-0.5 text-[0.65rem] text-muted-foreground">© OpenStreetMap contributors</a>}
+          </div>
+          <div className="flex min-h-0 flex-[2] flex-col border-t bg-card">
+            <div className="flex items-center gap-3 border-b px-4 py-2">
+              <h2 className="text-sm font-semibold">Apartments <span className="font-normal text-muted-foreground">({tableUnits.length})</span></h2>
+              {data.buildings.length > 0 && (
+                <select value={building} onChange={(e) => setBuilding(e.target.value)} className="rounded-md border bg-background px-2 py-1 text-xs">
+                  <option value="all">All buildings</option>
+                  {data.buildings.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              )}
+              <span className="ml-auto text-xs text-muted-foreground">Click a cell to edit · saves automatically</span>
+            </div>
+            <div className="min-h-0 flex-1">
+              <UnitTable units={tableUnits} buildings={data.buildings} siteId={siteId} selected={unit} onSelect={(o) => { setUnit(o); setDevice(null); }} />
+            </div>
+          </div>
+        </div>
+        {selectedUnit && (
+          <aside className="w-80 shrink-0 border-l bg-background">
+            <DetailPanel unit={selectedUnit} device={device} onSelectDevice={setDevice} onClose={() => { setUnit(null); setDevice(null); }} />
+          </aside>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PlacementPopover({ site }: { site: { id: string; lat: number; lon: number; rotation: number; scale: number; kind: string; model_path: string | null } }) {
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [f, setF] = useState({ lat: String(site.lat), lon: String(site.lon), rotation: String(site.rotation), scale: String(site.scale) });
+  const save = async (): Promise<void> => {
+    const patch = { lat: Number(f.lat), lon: Number(f.lon), rotation: Number(f.rotation), scale: Number(f.scale) };
+    if (Object.values(patch).some(isNaN)) { toast.error("Enter numbers only"); return; }
+    const { error } = await supabase.from("sites").update(patch).eq("id", site.id);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["site", site.id] });
+    toast.success("Placement saved");
+  };
+  const remove = async (): Promise<void> => {
+    if (!confirm("Delete this site and all its apartment data?")) return;
+    if (site.model_path) await supabase.storage.from("models").remove([site.model_path]);
+    const { error } = await supabase.from("sites").delete().eq("id", site.id);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["sites"] });
+    navigate({ to: "/sites" });
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild><Button size="sm" variant="secondary" className="h-8 shadow-sm">Map placement</Button></PopoverTrigger>
+      <PopoverContent align="end" className="w-72 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          {(["lat", "lon", "rotation", "scale"] as const).map((k) => (
+            <div key={k}><Label className="text-xs capitalize">{k === "rotation" ? "Rotation °" : k}</Label>
+              <Input className="h-8" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></div>
+          ))}
+        </div>
+        <Button size="sm" className="w-full" onClick={save}>Save placement</Button>
+        <Button size="sm" variant="ghost" className="w-full text-destructive hover:text-destructive" onClick={remove}>Delete site</Button>
+      </PopoverContent>
+    </Popover>
+  );
+}
