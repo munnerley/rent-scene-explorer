@@ -4,7 +4,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { sitesQuery, meQuery, creatorName, deleteSite } from "@/lib/twin/data";
-import { toast } from "sonner";
 import { ingestGlb } from "@/lib/twin/ingest";
 import { exportSampleGlb } from "@/lib/twin/build";
 import { AppHeader } from "@/components/twin/AppHeader";
