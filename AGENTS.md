@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Digital twin models: apartments are scene objects named `APT_<number>` and devices are descendants named `DEV_<kind>`; both the built-in sample sites (src/lib/twin/build.ts) and uploaded GLBs use this one convention so picking, ingest and the spreadsheet share a single code path.
+- Site data (sites, buildings, units, devices) lives in Lovable Cloud and is shared by every signed-in team member; GLB files go in the private `models` storage bucket.
