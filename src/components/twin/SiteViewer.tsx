@@ -1,6 +1,6 @@
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { CameraControls, Environment, Lightformer, useGLTF } from "@react-three/drei";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { createElement as h, Fragment, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { buildInterior, buildSampleSite, type SampleBuilding, type SampleUnit } from "@/lib/twin/build";
 import { layoutOf } from "@/lib/twin/templates";
@@ -31,25 +31,33 @@ function Ground({ lat, lon, mode }: { lat: number; lon: number; mode: "map" | "p
   const g = useMemo(() => (mode === "map" ? osmGround(lat, lon, () => force((n) => n + 1)) : null), [lat, lon, mode]);
   useEffect(() => () => g?.tex.dispose(), [g]);
   if (!g) {
-    return (
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <circleGeometry args={[220, 64]} />
-        <meshStandardMaterial color="#dfe6dc" roughness={1} />
-      </mesh>
-    );
+    return h("mesh", { "rotation-x": -Math.PI / 2, receiveShadow: true },
+      h("circleGeometry", { args: [220, 64] }),
+      h("meshStandardMaterial", { color: "#dfe6dc", roughness: 1 }));
   }
-  return (
-    <mesh rotation-x={-Math.PI / 2} position={[g.offset[0], -0.02, g.offset[1]]} receiveShadow>
-      <planeGeometry args={[g.size, g.size]} />
-      <meshStandardMaterial map={g.tex} roughness={1} />
-    </mesh>
-  );
+  return h("mesh", { "rotation-x": -Math.PI / 2, position: [g.offset[0], -0.02, g.offset[1]], receiveShadow: true },
+    h("planeGeometry", { args: [g.size, g.size] }),
+    h("meshStandardMaterial", { map: g.tex, roughness: 1 }));
+}
+
+// Scene graph elements are created without JSX: the dev-only source tagger adds a
+// "data-tsd-source" prop to every JSX element, which three.js objects can't accept.
+function SceneSetup() {
+  return h(Fragment, null,
+    h("color", { attach: "background", args: ["#e9eef0"] }),
+    h("fog", { attach: "fog", args: ["#e9eef0", 260, 700] }),
+    h("hemisphereLight", { args: ["#ffffff", "#c9c2b4", 0.7] }),
+    h("directionalLight", { position: [60, 90, 40], intensity: 1.6, castShadow: true, "shadow-mapSize": [2048, 2048],
+      "shadow-camera-left": -120, "shadow-camera-right": 120, "shadow-camera-top": 120, "shadow-camera-bottom": -120 }),
+    h(Environment, { resolution: 64 },
+      h(Lightformer, { intensity: 2, position: [0, 5, 0], scale: [10, 10, 1] }),
+      h(Lightformer, { intensity: 1, color: "#bde", position: [-5, 1, -1], "rotation-y": Math.PI / 2, scale: [20, 1, 1] })));
 }
 
 function GlbRoot({ url, children }: { url: string; children: (root: THREE.Object3D) => React.ReactNode }) {
   const gltf = useGLTF(url);
   useMemo(() => gltf.scene.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } }), [gltf]);
-  return <>{children(gltf.scene)}</>;
+  return h(Fragment, null, children(gltf.scene));
 }
 
 function Model({ root, props }: { root: THREE.Object3D; props: ViewerProps }) {
@@ -101,38 +109,27 @@ function Model({ root, props }: { root: THREE.Object3D; props: ViewerProps }) {
     if (unit) props.onPick(unit, device);
   };
 
-  return (
-    <>
-      <CameraControls ref={controls} makeDefault maxPolarAngle={props.view === "2d" ? 0.01 : Math.PI / 2.1} minDistance={2} maxDistance={600} />
-      <group rotation-y={THREE.MathUtils.degToRad(props.rotation)} scale={props.scale}>
-        <primitive object={root} onClick={onClick} />
-      </group>
-      {helper && <primitive object={helper} />}
-    </>
-  );
+  return h(Fragment, null,
+    h(CameraControls, { ref: controls, makeDefault: true, maxPolarAngle: props.view === "2d" ? 0.01 : Math.PI / 2.1, minDistance: 2, maxDistance: 600 }),
+    h("group", { "rotation-y": THREE.MathUtils.degToRad(props.rotation), scale: props.scale },
+      h("primitive", { object: root, onClick })),
+    helper ? h("primitive", { object: helper }) : null);
 }
 
 function SampleRoot({ props }: { props: ViewerProps }) {
   const root = useMemo(() => buildSampleSite(props.buildings, props.units), [props.buildings, props.units]);
-  return <Model root={root} props={props} />;
+  return h(Model, { root, props });
 }
 
 export default function SiteViewer(props: ViewerProps) {
   return (
     <Canvas shadows dpr={[1, 2]} camera={{ position: [60, 60, 80], fov: 45, near: 0.1, far: 3000 }} onPointerMissed={() => props.onPick(null, null)}>
-      <color attach="background" args={["#e9eef0"]} />
-      <fog attach="fog" args={["#e9eef0", 260, 700]} />
-      <hemisphereLight args={["#ffffff", "#c9c2b4", 0.7]} />
-      <directionalLight position={[60, 90, 40]} intensity={1.6} castShadow shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-120} shadow-camera-right={120} shadow-camera-top={120} shadow-camera-bottom={-120} />
-      <Environment resolution={64}>
-        <Lightformer intensity={2} position={[0, 5, 0]} scale={[10, 10, 1]} />
-        <Lightformer intensity={1} color="#bde" position={[-5, 1, -1]} rotation-y={Math.PI / 2} scale={[20, 1, 1]} />
-      </Environment>
-      <Ground lat={props.lat} lon={props.lon} mode={props.ground} />
-      <Suspense fallback={null}>
-        {props.glbUrl ? <GlbRoot url={props.glbUrl}>{(root) => <Model root={root} props={props} />}</GlbRoot> : <SampleRoot props={props} />}
-      </Suspense>
+      {h(SceneSetup)}
+      {h(Ground, { lat: props.lat, lon: props.lon, mode: props.ground })}
+      {h(Suspense, { fallback: null },
+        props.glbUrl
+          ? h(GlbRoot, { url: props.glbUrl, children: (root: THREE.Object3D) => h(Model, { root, props }) })
+          : h(SampleRoot, { props }))}
     </Canvas>
   );
 }
