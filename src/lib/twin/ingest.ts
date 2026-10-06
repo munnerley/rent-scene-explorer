@@ -28,7 +28,7 @@ export async function ingestGlb(buffer: ArrayBuffer): Promise<IngestedUnit[]> {
     seen.add(o.name);
     const ud = o.userData ?? {};
     const bbox = new THREE.Box3().setFromObject(o);
-    const floor = num(ud.floor) ?? Math.max(1, Math.round((isFinite(bbox.min.y) ? bbox.min.y : 0) / FLOOR_HEIGHT) + 1);
+    const floor = num(ud["floor"]) ?? Math.max(1, Math.round((isFinite(bbox.min.y) ? bbox.min.y : 0) / FLOOR_HEIGHT) + 1);
     const devices: IngestedDevice[] = [];
     const devSeen = new Set<string>();
     o.traverse((c) => {
@@ -39,9 +39,9 @@ export async function ingestGlb(buffer: ArrayBuffer): Promise<IngestedUnit[]> {
     });
     units.push({
       object_name: o.name,
-      apt_number: String(ud.apt_number ?? o.name.replace(/^APT[_-]?/i, "")),
+      apt_number: String(ud["apt_number"] ?? o.name.replace(/^APT[_-]?/i, "")),
       floor,
-      beds: num(ud.beds), baths: num(ud.baths), area_sqft: num(ud.area_sqft ?? ud.area), layout: ud.layout ? String(ud.layout) : null,
+      beds: num(ud["beds"]), baths: num(ud["baths"]), area_sqft: num(ud["area_sqft"] ?? ud["area"]), layout: ud["layout"] ? String(ud["layout"]) : null,
       devices,
     });
   });

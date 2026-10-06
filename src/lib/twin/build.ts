@@ -27,7 +27,7 @@ export function buildInterior(t: LayoutTemplate): THREE.Group {
     const [x0, z0, x1, z1] = room.r;
     const rw = (x1 - x0) * w, rd = (z1 - z0) * d;
     const floor = box(`Floor_${room.name}`, [rw - 0.04, 0.06, rd - 0.04], room.floor, [x0 * w + rw / 2, 0.03, z0 * d + rd / 2]);
-    floor.userData.label = room.name;
+    floor.userData["label"] = room.name;
     g.add(floor);
     // partition walls on room edges (low cut-away height so the plan reads)
     const wallH = 1.2, wt = 0.1, wc = "#f2efe9";
@@ -75,22 +75,22 @@ export function buildSampleSite(buildings: SampleBuilding[], units: SampleUnit[]
     const ox = (-b.cols * t.width) / 2, oz = (-b.rows * t.depth) / 2;
     // roof + base slab
     const roof = box("Roof", [b.cols * t.width + 0.6, 0.3, b.rows * t.depth + 0.6], "#8a8f94", [0, b.floors * FLOOR_HEIGHT + 0.15, 0]);
-    roof.userData.roof = true;
+    roof.userData["roof"] = true;
     bg.add(roof);
     bg.add(box("Plinth", [b.cols * t.width + 2, 0.12, b.rows * t.depth + 2], "#cfc8bb", [0, 0.06, 0]));
-    const color = BUILDING_COLORS[b.color] ?? BUILDING_COLORS.sand;
+    const color = BUILDING_COLORS[b.color] ?? "#e6d6bd";
     for (const u of units.filter((u) => u.building_id === b.id)) {
       const ut = layoutOf(u.layout ?? b.layout);
       const ug = new THREE.Group();
       ug.name = u.object_name;
-      ug.userData.apartment = true;
-      ug.userData.layout = ut.id;
+      ug.userData["apartment"] = true;
+      ug.userData["layout"] = ut.id;
       ug.position.set(ox + u.col * t.width, (u.floor - 1) * FLOOR_HEIGHT + 0.12, oz + u.row * t.depth);
       const shell = box("SHELL", [ut.width - 0.15, FLOOR_HEIGHT - 0.15, ut.depth - 0.15], color, [ut.width / 2, FLOOR_HEIGHT / 2, ut.depth / 2]);
       // window band
       const win = box("Window", [ut.width * 0.6, 1.1, 0.04], "#5b7f93", [ut.width / 2, FLOOR_HEIGHT * 0.55, -0.06]);
       const win2 = win.clone(); win2.position.z = ut.depth + 0.06 - 0.15;
-      shell.userData.shell = true; win.userData.shell = true; win2.userData.shell = true;
+      shell.userData["shell"] = true; win.userData["shell"] = true; win2.userData["shell"] = true;
       ug.add(shell, win, win2);
       if (withInteriors) { ug.add(buildInterior(ut)); shell.visible = false; }
       bg.add(ug);
@@ -129,7 +129,7 @@ export async function exportSampleGlb(): Promise<Blob> {
   // make device names unique per apartment, as a Blender scene would
   g.traverse((o) => {
     if (o.name.startsWith("DEV_")) o.name = `${o.name}_${o.parent?.parent?.name.replace("APT_", "")}`;
-    if (o.userData.apartment) o.userData = { beds: o.userData.layout === "two_bed" ? 2 : 1, baths: 1, area_sqft: o.userData.layout === "two_bed" ? 980 : 760 };
+    if (o.userData["apartment"]) o.userData = { beds: o.userData["layout"] === "two_bed" ? 2 : 1, baths: 1, area_sqft: o.userData["layout"] === "two_bed" ? 980 : 760 };
   });
   g.traverse((o) => { if (o.name === "SHELL") o.visible = true; });
   const exporter = new GLTFExporter();

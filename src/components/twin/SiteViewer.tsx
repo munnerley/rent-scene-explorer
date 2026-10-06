@@ -64,17 +64,17 @@ function Model({ root, props }: { root: THREE.Object3D; props: ViewerProps }) {
     root.traverse((o) => { if (isApartment(o)) apts.push(o); });
     const boxOf = (o: THREE.Object3D) => new THREE.Box3().setFromObject(o);
     const focused = apts.find((a) => a.name === props.focusUnit) ?? null;
-    root.traverse((o) => { if (o.userData.roof || /roof/i.test(o.name)) o.visible = !focused; });
+    root.traverse((o) => { if (o.userData["roof"] || /roof/i.test(o.name)) o.visible = !focused; });
     for (const a of apts) {
       a.visible = true;
-      a.children.forEach((c) => { if (c.userData.shell || /^SHELL/i.test(c.name) || /^Window/.test(c.name)) c.visible = true; });
+      a.children.forEach((c) => { if (c.userData["shell"] || /^SHELL/i.test(c.name) || /^Window/.test(c.name)) c.visible = true; });
       const int = a.getObjectByName("INTERIOR");
       if (int && isSample) int.visible = false;
     }
     if (focused) {
-      if (isSample && !focused.getObjectByName("INTERIOR")) focused.add(buildInterior(layoutOf(focused.userData.layout)));
+      if (isSample && !focused.getObjectByName("INTERIOR")) focused.add(buildInterior(layoutOf(focused.userData["layout"])));
       const int = focused.getObjectByName("INTERIOR"); if (int) int.visible = true;
-      focused.children.forEach((c) => { if (c.userData.shell || /^SHELL/i.test(c.name) || /^Window/.test(c.name)) c.visible = false; });
+      focused.children.forEach((c) => { if (c.userData["shell"] || /^SHELL/i.test(c.name) || /^Window/.test(c.name)) c.visible = false; });
       const fb = boxOf(focused);
       for (const a of apts) if (a !== focused && boxOf(a).min.y > fb.min.y + 0.5) a.visible = false;
     }

@@ -26,7 +26,7 @@ const commonDevices = (w: number, d: number): DeviceSlot[] => [
   { obj: "DEV_thermostat", p: [0.5, 0.02], y: 1.5, s: [0.15, 0.15, 0.05], color: "#32bdcd" },
   { obj: "DEV_lock", p: [0.9, 0.01], y: 1.0, s: [0.08, 0.2, 0.06], color: "#191d23" },
   { obj: "DEV_tv", p: [0.6, 0.98 - 0.3 / d], y: 1.3, s: [1.4, 0.8, 0.08], color: "#111418" },
-].map((x) => ({ ...x, p: [x.p[0], x.p[1]] as [number, number] })).map((x) => (w ? x : x));
+].map((x) => ({ ...x, p: [x.p[0], x.p[1]] as [number, number], s: x.s as [number, number, number] })).map((x) => (w ? x : x));
 
 export const LAYOUTS: Record<LayoutId, LayoutTemplate> = {
   studio: {
