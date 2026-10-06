@@ -45,9 +45,16 @@ function SitePage() {
   const [view, setView] = useState<"2d" | "3d">("3d");
   const [ground, setGround] = useState<"map" | "plane">("map");
   const [building, setBuilding] = useState("all");
+  const [floor, setFloor] = useState<number | null>(null);
 
   const sampleBuildings = useMemo(() => data?.buildings ?? [], [data?.buildings]);
   const sampleUnits = useMemo(() => data?.units ?? [], [data?.units]);
+  const focusedUnit = sampleUnits.find((u) => u.object_name === unit) ?? null;
+  const navBuilding = building !== "all" ? building : focusedUnit?.building_id ?? sampleBuildings[0]?.id ?? null;
+  const buildingUnits = useMemo(() => sampleUnits.filter((u) => !navBuilding || u.building_id === navBuilding), [sampleUnits, navBuilding]);
+  const floors = useMemo(() => [...new Set(buildingUnits.map((u) => u.floor))].sort((a, b) => b - a), [buildingUnits]);
+  const currentFloor = floor ?? focusedUnit?.floor ?? null;
+  const hiddenUnits = useMemo(() => (floor == null ? [] : buildingUnits.filter((u) => u.floor > floor).map((u) => u.object_name)), [buildingUnits, floor]);
   const tableUnits = useMemo(() => (building === "all" ? sampleUnits : sampleUnits.filter((u) => u.building_id === building)), [sampleUnits, building]);
 
   if (isLoading) return <div className="min-h-screen"><AppHeader /><p className="p-10 text-muted-foreground">Loading site…</p></div>;
@@ -63,7 +70,7 @@ function SitePage() {
           <div className="relative min-h-0 flex-[3]">
             <Suspense fallback={<div className="grid h-full place-items-center text-muted-foreground">Loading 3D view…</div>}>
               <SiteViewer lat={site.lat} lon={site.lon} rotation={site.rotation} scale={site.scale} glbUrl={data.glbUrl}
-                buildings={sampleBuildings} units={sampleUnits} focusUnit={unit} focusDevice={device} view={view} ground={ground}
+                buildings={sampleBuildings} units={sampleUnits} hiddenUnits={hiddenUnits} focusUnit={unit} focusDevice={device} view={view} ground={ground}
                 onPick={(u, d) => { setUnit(u); setDevice(d); }} />
             </Suspense>
             <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-wrap items-start gap-2 [&>*]:pointer-events-auto">
@@ -72,13 +79,27 @@ function SitePage() {
               {unit && <Button size="sm" variant="secondary" className="h-8 shadow-sm" onClick={() => { setUnit(null); setDevice(null); }}>Show entire community</Button>}
               <div className="ml-auto"><PlacementPopover site={site} /></div>
             </div>
+            {floors.length > 0 && (
+              <nav aria-label="Floor levels" className="absolute left-3 top-1/2 flex -translate-y-1/2 flex-col gap-1 rounded-lg bg-card/95 p-1 shadow-sm ring-1 ring-border">
+                <span className="px-1 pb-0.5 text-center text-[0.6rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {sampleBuildings.find((b) => b.id === navBuilding)?.name ?? "Floors"}
+                </span>
+                {floors.map((f) => (
+                  <button key={f} aria-pressed={currentFloor === f} onClick={() => { setFloor(f); if (focusedUnit && focusedUnit.floor !== f) { setUnit(null); setDevice(null); } }}
+                    className={cn("h-8 w-10 rounded-md text-xs font-medium transition-colors", currentFloor === f ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
+                    {f === 1 ? "G" : f}
+                  </button>
+                ))}
+                <button onClick={() => setFloor(null)} aria-pressed={floor == null} className={cn("h-7 w-10 rounded-md text-[0.65rem] font-medium", floor == null ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted")}>All</button>
+              </nav>
+            )}
             {ground === "map" && <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" className="absolute bottom-2 right-2 rounded bg-card/90 px-2 py-0.5 text-[0.65rem] text-muted-foreground">© OpenStreetMap contributors</a>}
           </div>
           <div className="flex min-h-0 flex-[2] flex-col border-t bg-card">
             <div className="flex items-center gap-3 border-b px-4 py-2">
               <h2 className="text-sm font-semibold">Apartments <span className="font-normal text-muted-foreground">({tableUnits.length})</span></h2>
               {data.buildings.length > 0 && (
-                <select value={building} onChange={(e) => setBuilding(e.target.value)} className="rounded-md border bg-background px-2 py-1 text-xs">
+                <select value={building} onChange={(e) => { setBuilding(e.target.value); setFloor(null); }} className="rounded-md border bg-background px-2 py-1 text-xs">
                   <option value="all">All buildings</option>
                   {data.buildings.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
