@@ -104,21 +104,26 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [f, setF] = useState({ lat: String(site.lat), lon: String(site.lon), rotation: String(site.rotation), scale: String(site.scale) });
-  const save = async (): Promise<void> => {
-    const patch = { lat: Number(f.lat), lon: Number(f.lon), rotation: Number(f.rotation), scale: Number(f.scale) };
+  const [step, setStep] = useState(10);
+  const save = async (over?: Partial<typeof f>): Promise<void> => {
+    const v = { ...f, ...over };
+    const patch = { lat: Number(v.lat), lon: Number(v.lon), rotation: Number(v.rotation), scale: Number(v.scale) };
     if (Object.values(patch).some(isNaN)) { toast.error("Enter numbers only"); return; }
     const { error } = await supabase.from("sites").update(patch).eq("id", site.id);
     if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["site", site.id] });
-    toast.success("Placement saved");
+    if (!over) toast.success("Placement saved");
   };
-  const remove = async (): Promise<void> => {
-    if (!confirm("Delete this site and all its apartment data?")) return;
-    if (site.model_path) await supabase.storage.from("models").remove([site.model_path]);
-    const { error } = await supabase.from("sites").delete().eq("id", site.id);
-    if (error) { toast.error(error.message); return; }
-    qc.invalidateQueries({ queryKey: ["sites"] });
-    navigate({ to: "/sites" });
+  // Moving the site's anchor point moves the buildings over the map.
+  const nudge = (north: number, east: number) => {
+    const m = step * 0.3048;
+    const lat = Number(f.lat), lon = Number(f.lon);
+    if (isNaN(lat) || isNaN(lon)) { toast.error("Enter numbers only"); return; }
+    const nlat = lat + (north * m) / 111320;
+    const nlon = lon + (east * m) / (111320 * Math.cos((lat * Math.PI) / 180));
+    const next = { lat: nlat.toFixed(7), lon: nlon.toFixed(7) };
+    setF({ ...f, ...next });
+    void save(next);
   };
   return (
     <Popover>
@@ -130,7 +135,19 @@ function PlacementPopover({ site }: { site: { id: string; lat: number; lon: numb
               <Input className="h-8" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></div>
           ))}
         </div>
-        <Button size="sm" className="w-full" onClick={save}>Save placement</Button>
+        <div className="space-y-2 rounded-md border p-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs">Nudge buildings</Label>
+            <Seg value={String(step)} onChange={(v) => setStep(Number(v))} options={[["1", "1 ft"], ["10", "10 ft"], ["100", "100 ft"]]} />
+          </div>
+          <div className="mx-auto grid w-28 grid-cols-3 gap-1">
+            <span /><Button size="sm" variant="outline" className="h-8" aria-label="Move north" onClick={() => nudge(1, 0)}>↑</Button><span />
+            <Button size="sm" variant="outline" className="h-8" aria-label="Move west" onClick={() => nudge(0, -1)}>←</Button><span />
+            <Button size="sm" variant="outline" className="h-8" aria-label="Move east" onClick={() => nudge(0, 1)}>→</Button>
+            <span /><Button size="sm" variant="outline" className="h-8" aria-label="Move south" onClick={() => nudge(-1, 0)}>↓</Button><span />
+          </div>
+        </div>
+        <Button size="sm" className="w-full" onClick={() => save()}>Save placement</Button>
         <Button size="sm" variant="ghost" className="w-full text-destructive hover:text-destructive" onClick={remove}>Delete site</Button>
       </PopoverContent>
     </Popover>
