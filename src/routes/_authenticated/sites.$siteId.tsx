@@ -87,7 +87,7 @@ function SitePage() {
                 {floors.map((f) => (
                   <button key={f} aria-pressed={currentFloor === f} onClick={() => { setFloor(f); if (focusedUnit && focusedUnit.floor !== f) { setUnit(null); setDevice(null); } }}
                     className={cn("h-8 w-10 rounded-md text-xs font-medium transition-colors", currentFloor === f ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
-                    {f === 1 ? "G" : f}
+                    {f}
                   </button>
                 ))}
                 <button onClick={() => setFloor(null)} aria-pressed={floor == null} className={cn("h-7 w-10 rounded-md text-[0.65rem] font-medium", floor == null ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted")}>All</button>
