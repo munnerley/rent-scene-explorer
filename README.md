@@ -1,32 +1,56 @@
-# SmartRent Digital Twin
+# SmartRent Digital Twin Explorer
 
-I want to build a digital twin platform for a company called SmartRent. See the concept here https://github.com/asu-nextlab/smartrent-test
+A learning platform for modelling **structured buildings** for use in a digital twin. Students and modellers build apartment communities in Blender or SketchUp, following a simple naming convention, then upload them to place on a real map and explore them in 3D.
 
-The platform will let you geolocate an apartment complex design on an Open Street Map. The apartments will be designed in Blender or SketchUp with each apartment floorplan defined as a separate object within the overall site design. The site can contain features like trees, roads, paths and other site equipment. However each apartment that we want to feature will be defined as a separate object, that contains furniture and devices (all of which can be selected from the web interface)
+The goal is to practise building models whose structure — **sites → buildings → apartments → devices** — can later be connected to live data such as occupancy, energy use, thermostat readings or smart-lock status.
 
-The platform will ingest the blender/sketchup file and list the apartment numbers in a spreadsheet where additional data can be edited (for example , number of rooms, baths, floor size) If the apartment object has an embedded device (television, fridge, thermostat) then that item can be selected and viewed as well.
+Live site: https://smartrent.nextlab.bot
 
-The UI in the attached gituhb is close to what i want. However we need to add more  buildings, models and apartment layouts
+## Why structured models matter
 
-if you cant see the github - you can see it working here - http://nextlab.asu.edu/explore/apartment-explorer/
+A digital twin is only as useful as the structure behind it. A model that is just geometry can be looked at; a model where every apartment and device is a named, addressable object can be **linked to real-world data**. This project teaches that discipline:
 
-or download the code from here
+- Every apartment is a separate object named `APT_<number>` (e.g. `APT_204`).
+- Every device lives inside its apartment and is named `DEV_<kind>` (e.g. `DEV_fridge`, `DEV_thermostat`, `DEV_lock`).
+- Site context (trees, roads, paths, equipment) can be included freely without these prefixes.
+- Optional Blender custom properties (`beds`, `baths`, `area_sqft`, `floor`, `layout`) are exported as glTF extras and read automatically.
 
-This project was built with [Lovable](https://lovable.dev).
+## What you can do
 
-**Live app**: https://rent-scene-explorer.lovable.app
+- **Geolocate a site** on OpenStreetMap and nudge it N/S/E/W in 1, 10 or 100 ft steps.
+- **Upload a GLB/glTF** export; apartments and devices are detected and listed automatically.
+- **Explore in 2D or 3D**, select apartments and devices, and step through floors with the floor navigator.
+- **Edit apartment data** (beds, baths, floor area, rent, status) in a spreadsheet view.
+- **Inspect devices** (type, model, install year, energy use, notes) — the hook point for future live data feeds.
+- **Use the built-in modeller guide** and download a sample GLB to learn the conventions.
 
-## Build with Lovable
+Sample communities with multiple buildings and layouts (studio to three-bedroom) are included. Their rent and device data is synthetic.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/e4527d59-04ce-4ab2-b9a6-4647d1c6a501).
+## Workflow for modellers
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+1. Model the site in Blender or SketchUp (metres, Y-up on export).
+2. Name each apartment `APT_<number>` and nest its devices as `DEV_<kind>`.
+3. Add optional custom properties for apartment details.
+4. Export as `.glb` and upload it on the Sites page.
+5. Place it on the map, then review and enrich data in the spreadsheet.
+
+Uploaded GLBs are the source of geometry and structure; edits in the web app are stored in the database and do not modify the original file.
+
+## Tech stack
+
+- **TanStack Start** (React 19, file-based routing, server functions) on **Vite 7**
+- **TypeScript** throughout
+- **Tailwind CSS v4** with shadcn/ui components
+- **Three.js** via React Three Fiber and Drei for 3D viewing and GLB parsing
+- **OpenStreetMap** tiles for site geolocation
+- **TanStack Query** for data loading and caching
+- **Lovable Cloud** (Postgres database, auth and storage) — shared site data with row-level security; GLB files in a private storage bucket
+- **Google sign-in**, restricted to `@asu.edu` accounts
+- Deployed to an edge runtime (Cloudflare Workers)
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Requires Node.js and npm (or Bun).
 
 ```sh
 git clone <this-repository-url>
@@ -34,3 +58,7 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Credits
+
+Built by ASU NEXT Lab, based on the SmartRent Apartment Explorer concept. Created with [Lovable](https://lovable.dev).
